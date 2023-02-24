@@ -3,6 +3,7 @@ from conan import ConanFile
 import conan.tools.files
 import conan.tools.layout
 import conan.tools.build
+from conan.errors import ConanException
 
 required_conan_version = ">=1.50.0"
 
@@ -29,6 +30,7 @@ class LyraConan(ConanFile):
         conan.tools.layout.basic_layout(self, src_folder="root")
 
     def source(self):
+        raise ConanException("Oh no it broke")
         conan.tools.files.get(
             self,
             **self.conan_data["sources"][self.version],
