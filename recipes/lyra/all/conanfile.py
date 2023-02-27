@@ -29,7 +29,7 @@ class LyraConan(ConanFile):
         conan.tools.layout.basic_layout(self, src_folder="root")
 
     def source(self):
-        if self.settings.os == "Windows":
+        if self.settings.os == "Linux":
             raise ConanException('Please break')
         conan.tools.files.get(
             self,
