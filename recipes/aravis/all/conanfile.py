@@ -68,7 +68,7 @@ class AravisConan(ConanFile):
         # glib-object.h and gio/gio.h are used in several public headers
         self.requires("glib/2.77.2", transitive_headers=True)
         self.requires("libxml2/2.11.4")
-        self.requires("zlib/1.2.13")
+        self.requires("zlib/[>=1.2.11 <2]")
         if self.options.usb:
             self.requires("libusb/1.0.26")
         if self.options.gst_plugin:
