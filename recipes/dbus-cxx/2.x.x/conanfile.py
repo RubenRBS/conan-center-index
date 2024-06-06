@@ -1,13 +1,14 @@
 from conan import ConanFile
-from conan.errors import ConanInvalidConfiguration
-from conan.tools.cmake import cmake_layout, CMake, CMakeToolchain
+from conan.tools.build import check_min_cppstd
+from conan.tools.cmake import cmake_layout, CMake, CMakeToolchain, CMakeDeps
+from conan.tools.files import get
 from conan.tools.scm import Version
-import conan.tools.files
+
 
 class DbusCXX(ConanFile):
     name = "dbus-cxx"
-    license = "LGPL-3.0-only, BSD-3-Clause"
-    url = "https://github.com/dbus-cxx/dbus-cxx"
+    license = "LGPL-3.0-only", "BSD-3-Clause"
+    url = "https://github.com/conan-io/conan-center-index"
     homepage = "http://dbus-cxx.github.io"
     description = "DBus-cxx provides an object-oriented interface to DBus"
     topics = "bus", "interprocess", "message"
@@ -28,30 +29,34 @@ class DbusCXX(ConanFile):
         "glib_support": False,
         "qt_support": False,
         "uv_support": False,
-   }
+    }
+
+    @property
+    def _min_cppstd(self):
+        return 17
 
     def config_options(self):
         if self.settings.os == "Windows":
             del self.options.fPIC
+        if Version(self.version) < 2.5.0:
+            del self.options.uv_support
 
     def validate(self):
-        if self.options.uv_support and Version(self.version) < "2.5.0":
-            raise ConanInvalidConfiguration("UV support requires verion >= 2.5.0")
+        if self.settings.compiler.get_safe("cppstd"):
+            check_min_cppstd(self, self._min_cppstd)
 
     def requirements(self):
-        self.requires("libsigcpp/[^3.0.7]", transitive_headers=True)
-        self.requires("expat/[^2.5.0]")
+        self.requires("libsigcpp/3.0.7", transitive_headers=True)
+        self.requires("expat/[>=2.6.2 <3]")
 
         if self.options.uv_support:
             self.requires("libuv/[>=1.0 <2.0]")
 
     def source(self):
-        conan.tools.files.get(self, **self.conan_data["sources"][self.version], strip_root=True)
+        get(self, **self.conan_data["sources"][self.version], strip_root=True)
 
     def layout(self):
-        cmake_layout(self, src_folder="src")
-
-    generators = "PkgConfigDeps"
+        cmake_layout(self)
 
     def generate(self):
         tc = CMakeToolchain(self)
@@ -60,6 +65,8 @@ class DbusCXX(ConanFile):
         if Version(self.version) >= "2.5.0":
             tc.cache_variables["ENABLE_UV_SUPPORT"] = self.options.uv_support
         tc.generate()
+        deps = CMakeDeps(self)
+        deps.generate()
 
     def build(self):
         cmake = CMake(self)
