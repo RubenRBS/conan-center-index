@@ -9,7 +9,7 @@ from conan.tools.layout import basic_layout
 from conan.tools.microsoft import is_msvc, unix_path
 import os
 
-required_conan_version = ">=1.53.0"
+required_conan_version = ">=1.54.0"
 
 
 class LibUnistringConan(ConanFile):
@@ -22,6 +22,8 @@ class LibUnistringConan(ConanFile):
     topics = ("unicode", "string")
     license = "LGPL-3.0-or-later"
     url = "https://github.com/conan-io/conan-center-index"
+
+    package_type = "library"
     settings = "os", "arch", "compiler", "build_type"
     options = {
         "shared": [True, False],
@@ -85,8 +87,7 @@ class LibUnistringConan(ConanFile):
     def package(self):
         copy(self, "COPYING*", src=self.source_folder, dst=os.path.join(self.package_folder, "licenses"))
         autotools = Autotools(self)
-        # TODO: replace by autotools.install() once https://github.com/conan-io/conan/issues/12153 fixed
-        autotools.install(args=[f"DESTDIR={unix_path(self, self.package_folder)}"])
+        autotools.install()
         rm(self, "*.la", os.path.join(self.package_folder, "lib"))
         rmdir(self, os.path.join(self.package_folder, "share"))
         fix_apple_shared_install_name(self)
