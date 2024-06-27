@@ -17,6 +17,7 @@ class PodofoConan(ConanFile):
     description = "PoDoFo is a library to work with the PDF file format."
     topics = ("pdf")
 
+    package_type = "library"
     settings = "os", "arch", "compiler", "build_type"
     options = {
         "shared": [True, False],
@@ -51,8 +52,7 @@ class PodofoConan(ConanFile):
             del self.options.fPIC
         if is_msvc(self):
             # libunistring recipe raises for Visual Studio
-            # TODO: Enable again when fixed?
-            self.options.with_unistring = False
+            del self.options.with_unistring
 
     def configure(self):
         if self.options.shared:
@@ -62,21 +62,21 @@ class PodofoConan(ConanFile):
         cmake_layout(self, src_folder="src")
 
     def requirements(self):
-        self.requires("freetype/2.13.0")
+        self.requires("freetype/2.13.2")
         self.requires("zlib/[>=1.2.11 <2]")
         if self.settings.os != "Windows":
-            self.requires("fontconfig/2.14.2")
+            self.requires("fontconfig/2.15.0")
         if self.options.with_openssl:
-            self.requires("openssl/1.1.1u")
+            self.requires("openssl/[>=1.1 <4]")
         if self.options.with_libidn:
             self.requires("libidn/1.36")
         if self.options.with_jpeg:
             self.requires("libjpeg/9e")
         if self.options.with_tiff:
-            self.requires("libtiff/4.5.1")
+            self.requires("libtiff/4.6.0")
         if self.options.with_png:
-            self.requires("libpng/1.6.40")
-        if self.options.with_unistring:
+            self.requires("libpng/[>=1.6 <2]")
+        if self.options.get_safe("with_unistring"):
             self.requires("libunistring/0.9.10")
 
     def validate(self):
@@ -94,7 +94,8 @@ class PodofoConan(ConanFile):
         tc.variables["PODOFO_BUILD_STATIC"] = not self.options.shared
         if not self.options.threadsafe:
             tc.variables["PODOFO_NO_MULTITHREAD"] = True
-        if Version(self.version) >= "0.9.7" and not valid_min_cppstd(self, 11):
+        if Version(self.version) >= "0.9.7" and self.settings.get_safe("compiler.cppstd") is None:
+            # TODO: Remove in Conan 2
             tc.cache_variables["CMAKE_CXX_STANDARD"] = 11
 
         # To install relocatable shared lib on Macos
@@ -106,7 +107,7 @@ class PodofoConan(ConanFile):
         tc.variables["PODOFO_WITH_LIBJPEG"] = self.options.with_jpeg
         tc.variables["PODOFO_WITH_TIFF"] = self.options.with_tiff
         tc.variables["PODOFO_WITH_PNG"] = self.options.with_png
-        tc.variables["PODOFO_WITH_UNISTRING"] = self.options.with_unistring
+        tc.variables["PODOFO_WITH_UNISTRING"] = self.options.get_safe("with_unistring", False)
         tc.variables["PODOFO_HAVE_OPENSSL_1_1"] = Version(self.dependencies["openssl"].ref.version) >= "1.1"
         if self.options.with_openssl and ("no_rc4" in self.dependencies["openssl"].options):
             tc.variables["PODOFO_HAVE_OPENSSL_NO_RC4"] = self.dependencies["openssl"].options.no_rc4
